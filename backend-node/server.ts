@@ -135,7 +135,17 @@ app.post('/api/multimodal/process', upload.single('file'), async (req, res) => {
 
 // ... (keep top part, we will restructure app listen)
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (request, socket, head) => {
+  if (request.url === '/ws') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
 app.post('/api/agents/build', async (req, res) => {
   const { idea } = req.body;

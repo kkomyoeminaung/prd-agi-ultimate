@@ -19,9 +19,12 @@ def main():
     agents_proc = start_process("python3 software-agents/main.py", "Software Agents (8002)")
     
     # 4. Start Backend
-    backend_proc = start_process("cd backend-node && npm run dev", "Express Backend (3000)")
+    backend_proc = start_process("cd backend-node && PORT=3001 npm run dev", "Express Backend (3001)")
     
-    print("📡 All 4 services started. Monitoring...")
+    # 5. Start Frontend
+    frontend_proc = start_process("npm run dev", "React Frontend (3000)")
+    
+    print("📡 All 5 services started. Monitoring...")
     
     try:
         while True:
@@ -33,13 +36,19 @@ def main():
             if agents_proc.poll() is not None:
                 agents_proc = start_process("python3 software-agents/main.py", "Software Agents (RESTART)")
             if backend_proc.poll() is not None:
-                backend_proc = start_process("cd backend-node && npm run dev", "Express Backend (RESTART)")
+                backend_proc = start_process("cd backend-node && PORT=3001 npm run dev", "Express Backend (RESTART)")
+            if frontend_proc.poll() is not None:
+                frontend_proc = start_process("npm run dev", "React Frontend (RESTART)")
     except KeyboardInterrupt:
         print("Stopping processes...")
         os.killpg(os.getpgid(llm_proc.pid), signal.SIGTERM)
         os.killpg(os.getpgid(core_proc.pid), signal.SIGTERM)
         os.killpg(os.getpgid(agents_proc.pid), signal.SIGTERM)
         os.killpg(os.getpgid(backend_proc.pid), signal.SIGTERM)
+        try:
+            os.killpg(os.getpgid(frontend_proc.pid), signal.SIGTERM)
+        except:
+            pass
         sys.exit(0)
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ export default function BuildProgress({ isActive, onComplete }: { isActive: bool
 
     // Determine WS protocol based on current protocol
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
     
     let ws: WebSocket;
     const connectWs = () => {
