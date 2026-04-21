@@ -1,8 +1,25 @@
 import os
+import torch
 from fastapi import FastAPI
 from pydantic import BaseModel
+from transformers import pipeline
 
-app = FastAPI(title="Private LLM Gateway")
+app = FastAPI(title="Private PRD-LLM (Local GPU Engine)")
+
+print("🚀 Loading REAL Local LLM onto GPU (Qwen2.5 0.5B)...")
+MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
+
+try:
+    generator = pipeline(
+        "text-generation",
+        model=MODEL_NAME,
+        torch_dtype=torch.float16,
+        device_map="auto"
+    )
+    print("✅ Model loaded successfully!")
+except Exception as e:
+    print(f"⚠️ Error loading model: {e}")
+    generator = None
 
 class GenerateRequest(BaseModel):
     prompt: str
@@ -10,32 +27,30 @@ class GenerateRequest(BaseModel):
 
 @app.post("/generate")
 async def generate(req: GenerateRequest):
-    gemini_key = os.environ.get("GEMINI_API_KEY")
-    if gemini_key:
-        try:
-            import httpx
-            async with httpx.AsyncClient() as client:
-                res = await client.post(
-                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key={gemini_key}",
-                    json={"contents": [{"parts": [{"text": req.prompt}]}]},
-                    timeout=30
-                )
-                data = res.json()
-                text = data["candidates"][0]["content"]["parts"][0]["text"]
-                return {"text": text, "confidence": 0.95, "source": "gemini"}
-        except Exception as e:
-            return {"text": f"[LLM Error: {e}]", "confidence": 0.0}
+    if not generator:
+        return {"text": "[Error: Local model failed to load]", "confidence": 0.0, "source": "local-prd-llm"}
     
-    # Fallback stub
-    return {
-        "text": f"[PRD-LLM Stub] Processed: {req.prompt[:50]}...",
-        "confidence": 0.3,
-        "source": "stub"
-    }
+    try:
+        messages = [{"role": "user", "content": req.prompt}]
+        prompt = generator.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        
+        outputs = generator(
+            prompt,
+            max_new_tokens=req.max_length,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9
+        )
+        
+        # Extract the response part strictly after the prompt
+        gen_text = outputs[0]["generated_text"][len(prompt):].strip()
+        return {"text": gen_text, "confidence": 0.95, "source": "local-prd-llm"}
+    except Exception as e:
+        return {"text": f"[Inference Error: {e}]", "confidence": 0.0, "source": "error"}
 
 @app.get("/")
 def health():
-    return {"status": "ok", "model": "PRD-LLM Gateway"}
+    return {"status": "ok", "model": MODEL_NAME}
 
 if __name__ == "__main__":
     import uvicorn

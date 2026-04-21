@@ -32,7 +32,7 @@ def main():
 
     # 5. Frontend (port 3000) — frontend ONLY (not "npm run dev" which starts both)
     frontend_proc = start_process(
-        "npx vite serve --port 3000 --host 0.0.0.0",
+        "npx vite --port 3000 --host 0.0.0.0",
         "React Frontend (3000)"
     )
 
@@ -43,7 +43,7 @@ def main():
         "PRD Core":     (core_proc, "cd prd-core && python3 -m uvicorn main:app --host 0.0.0.0 --port 8001"),
         "Agents":       (agents_proc, "cd software-agents && python3 -m uvicorn main:app --host 0.0.0.0 --port 8002"),
         "Backend":      (backend_proc, "cd backend-node && PORT=3001 npx tsx server.ts"),
-        "Frontend":     (frontend_proc, "npx vite serve --port 3000 --host 0.0.0.0"),
+        "Frontend":     (frontend_proc, "npx vite --port 3000 --host 0.0.0.0"),
     }
 
     try:
