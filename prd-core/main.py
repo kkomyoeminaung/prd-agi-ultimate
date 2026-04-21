@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
 import numpy as np
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from engine import PRDLLMEngine
 
 app = FastAPI(title="PRD Core Engine")

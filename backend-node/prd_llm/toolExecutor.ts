@@ -7,12 +7,29 @@ const execPromise = util.promisify(exec);
 export class ToolExecutor {
   async executeCalculator(expression: string): Promise<string> {
     try {
-      // Very basic safe evaluation (use math.js in prod)
-      const sanitized = expression.replace(/[^0-9+\-*/().]/g, '');
-      const result = eval(sanitized);
+      const sanitized = expression.replace(/[^0-9+\-*/().\s]/g, '').trim();
+      if (!sanitized) return 'Invalid expression';
+      
+      // Safe math evaluation without eval()
+      const calculate = (expr: string): number => {
+        const tokens = expr.match(/(\d+\.?\d*|[+\-*/()])/g) || [];
+        // Simple recursive descent parser
+        let pos = 0;
+        const num = (): number => {
+          const tok = tokens[pos++];
+          if (!tok) return 0;
+          if (tok === '(') { const v = add(); pos++; return v; }
+          return parseFloat(tok);
+        };
+        const mul = (): number => { let v = num(); while (tokens[pos] === '*' || tokens[pos] === '/') { const op = tokens[pos++]; v = op === '*' ? v * num() : v / num(); } return v; };
+        const add = (): number => { let v = mul(); while (tokens[pos] === '+' || tokens[pos] === '-') { const op = tokens[pos++]; v = op === '+' ? v + mul() : v - mul(); } return v; };
+        return add();
+      };
+      
+      const result = calculate(sanitized);
       return `Calculator result: ${result}`;
     } catch (e) {
-      return `Calculator error: ${e}`;
+      return `Calculator error: invalid expression`;
     }
   }
 

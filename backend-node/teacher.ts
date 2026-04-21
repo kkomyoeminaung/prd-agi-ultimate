@@ -1,5 +1,4 @@
 import { GoogleGenAI } from "@google/genai";
-import OpenAI from "openai";
 import axios from "axios";
 
 export class TeacherManager {
@@ -10,7 +9,7 @@ export class TeacherManager {
       try {
         const ai = new GoogleGenAI({ apiKey: geminiKey });
         const result = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash-preview-04-17",
           contents: query
         });
         return { answer: result.text, source: 'Gemini' };
@@ -20,7 +19,36 @@ export class TeacherManager {
     // 2. Groq (simplified)
     const groqKey = process.env.GROQ_API_KEY;
     if (groqKey) {
-      // Logic for Groq
+      try {
+        const { default: Groq } = await import('groq-sdk');
+        const groq = new Groq({ apiKey: groqKey });
+        const completion = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: query }],
+          max_tokens: 1024,
+        });
+        const answer = completion.choices[0]?.message?.content || '';
+        if (answer) return { answer, source: 'Groq (Llama 3.3)' };
+      } catch (e) {
+        console.warn('[Teacher] Groq failed:', e);
+      }
+    }
+
+    // Fallback logic
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (openaiKey) {
+      try {
+        const { default: OpenAI } = await import('openai');
+        const client = new OpenAI({ apiKey: openaiKey });
+        const response = await client.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: query }],
+        });
+        const answer = response.choices[0]?.message?.content || '';
+        if (answer) return { answer, source: 'OpenAI GPT-4o-mini' };
+      } catch (e) {
+        console.warn('[Teacher] OpenAI failed:', e);
+      }
     }
 
     // 3. Fallback to Local Ollama

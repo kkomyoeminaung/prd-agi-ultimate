@@ -1,4 +1,6 @@
-from .tensor import RelationalTensor
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from tensor import RelationalTensor
 
 class PRDLLMEngine:
     def __init__(self):
