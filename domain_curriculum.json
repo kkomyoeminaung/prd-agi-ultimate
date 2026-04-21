@@ -1,0 +1,17 @@
+{
+  "physics": {
+    "level_1": ["Newton's Laws", "Thermodynamics"],
+    "level_2": ["Quantum Mechanics", "General Relativity"],
+    "level_3": ["String Theory", "Loop Quantum Gravity"]
+  },
+  "buddhism": {
+    "level_1": ["Four Noble Truths", "Eightfold Path"],
+    "level_2": ["Abhidhamma", "24 Paccaya"],
+    "level_3": ["Visuddhimagga", "Patthana"]
+  },
+  "ai": {
+    "level_1": ["Machine Learning Basics", "Neural Networks"],
+    "level_2": ["Transformers", "Causal Inference"],
+    "level_3": ["AGI Safety", "Universal Intelligence"]
+  }
+}

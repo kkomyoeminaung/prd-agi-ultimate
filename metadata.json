@@ -1,0 +1,15 @@
+{
+  "name": "PRD-AGI Complete Ultimate Edition",
+  "description": "A unified AI system combining self-learning chat, conceptual causal modeling, and a full software development pipeline, powered by PRD-LLM and teacher distillation. Features 10 advanced modules including CoT, RLHF, Multi-modal, and Graph-based reasoning.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "Software Development Pipeline",
+    "Self-Learning (Dream Mode)",
+    "Causal Reasoning",
+    "Knowledge Distillation"
+  ]
+}
