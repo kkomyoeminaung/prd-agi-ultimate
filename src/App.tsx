@@ -44,6 +44,10 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: input })
       });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Server error');
+      }
       const data = await res.json();
       setMessages(prev => [...prev, { 
          sender: 'ai', 
@@ -51,8 +55,11 @@ export default function App() {
          steps: data.steps, 
          tensor: data.tensor 
       }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { sender: 'system', text: 'Error connecting to brain.' }]);
+    } catch (e: any) {
+      setMessages(prev => [...prev, { 
+        sender: 'system', 
+        text: `Error connecting to brain: ${e.message}` 
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -67,10 +74,11 @@ export default function App() {
      setIsLoading(true);
      try {
         const res = await fetch('/api/multimodal/process', { method: 'POST', body: fd });
+        if (!res.ok) throw new Error('Analysis failed');
         const data = await res.json();
         setMessages(prev => [...prev, { sender: 'ai', text: `Analyzed Media: ${data.caption || data.transcript || data.scenes}`, tensor: data.tensor }]);
-     } catch(err) {
-        setMessages(prev => [...prev, { sender: 'system', text: 'File analysis failed.'}]);
+     } catch(err: any) {
+        setMessages(prev => [...prev, { sender: 'system', text: `File analysis failed: ${err.message}`}]);
      } finally {
        setIsLoading(false);
      }
@@ -92,15 +100,15 @@ export default function App() {
   return (
     <div id="app-root" className="flex h-screen bg-[#0d1117] text-[#c9d1d9] font-sans overflow-hidden selection:bg-teal-500/30">
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-[#161b22] border-r border-[#30363d] flex flex-col shrink-0">
-        <div className="p-6 border-b border-[#30363d]">
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="w-3 h-3 bg-teal-400 rounded-full shadow-[0_0_8px_#2dd4bf]"></span>
-            PRD-AGI <span className="text-xs font-mono text-teal-500 font-normal">v3.0</span>
+      <aside className="w-16 md:w-64 bg-[#161b22] border-r border-[#30363d] flex flex-col shrink-0 transition-all duration-300">
+        <div className="p-4 md:p-6 border-b border-[#30363d] flex justify-center md:block">
+          <h1 className="text-xl font-bold text-white flex items-center gap-2 overflow-hidden">
+            <span className="w-3 h-3 bg-teal-400 rounded-full shadow-[0_0_8px_#2dd4bf] shrink-0"></span>
+            <span className="hidden md:inline">PRD-AGI</span> <span className="text-xs font-mono text-teal-500 font-normal hidden md:inline whitespace-nowrap">v3.0</span>
           </h1>
         </div>
         
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-2 md:p-4 space-y-1">
           {[
             { id: 'chat', icon: MessageSquare, label: 'General Chat' },
             { id: 'reasoning', icon: Brain, label: 'CoT Reasoning' },
@@ -113,21 +121,22 @@ export default function App() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as Tab)}
+              title={t.label}
               className={cn(
-                "w-full px-4 py-2.5 rounded-md cursor-pointer flex items-center gap-3 transition-all text-sm font-medium",
+                "w-full px-2 md:px-4 py-2.5 rounded-md cursor-pointer flex items-center justify-center md:justify-start gap-3 transition-all text-sm font-medium",
                 activeTab === t.id 
                   ? "bg-[#21262d] text-white border border-[#30363d] shadow-sm" 
                   : "text-slate-400 hover:bg-[#21262d]/50 hover:text-slate-200"
               )}
             >
-              <t.icon className={cn("w-4 h-4", activeTab === t.id ? "text-teal-400" : "opacity-70")} />
-              {t.label}
+              <t.icon className={cn("w-5 h-5 md:w-4 md:h-4 shrink-0", activeTab === t.id ? "text-teal-400" : "opacity-70")} />
+              <span className="hidden md:inline truncate">{t.label}</span>
             </button>
           ))}
         </nav>
 
         {/* System Status in Sidebar */}
-        <div className="p-4 border-t border-[#30363d] bg-[#0d1117]">
+        <div className="p-2 md:p-4 border-t border-[#30363d] bg-[#0d1117] hidden md:block">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">System Status</span>
             <span className="px-2 py-0.5 rounded-full bg-green-900/20 text-green-400 text-[9px] border border-green-800/50">ACTIVE</span>

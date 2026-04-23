@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
 export class TeacherManager {
@@ -7,13 +7,16 @@ export class TeacherManager {
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
       try {
-        const ai = new GoogleGenAI({ apiKey: geminiKey });
-        const result = await ai.models.generateContent({
-          model: "gemini-2.5-flash-preview-04-17",
-          contents: query
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-2.0-flash-exp" // Use available stable model name
         });
-        return { answer: result.text, source: 'Gemini' };
-      } catch (e) {}
+        const result = await model.generateContent(query);
+        const response = await result.response;
+        return { answer: response.text(), source: 'Gemini' };
+      } catch (e) {
+        console.warn('[Teacher] Gemini failed:', e);
+      }
     }
 
     // 2. Groq (simplified)
@@ -21,7 +24,7 @@ export class TeacherManager {
     if (groqKey) {
       try {
         const { default: Groq } = await import('groq-sdk');
-        const groq = new Groq({ apiKey: groqKey });
+        const groq = new (Groq as any)({ apiKey: groqKey });
         const completion = await groq.chat.completions.create({
           model: 'llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: query }],
@@ -39,7 +42,7 @@ export class TeacherManager {
     if (openaiKey) {
       try {
         const { default: OpenAI } = await import('openai');
-        const client = new OpenAI({ apiKey: openaiKey });
+        const client = new (OpenAI as any)({ apiKey: openaiKey });
         const response = await client.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: query }],
@@ -53,7 +56,7 @@ export class TeacherManager {
 
     // 3. Fallback to Local Ollama
     try {
-      const ollamaRes = await axios.post(`${process.env.OLLAMA_HOST}/api/generate`, {
+      const ollamaRes = await axios.post(`${process.env.OLLAMA_HOST || 'http://localhost:11434'}/api/generate`, {
         model: 'qwen2.5-coder:7b',
         prompt: query,
         stream: false

@@ -133,7 +133,17 @@ app.post('/api/multimodal/process', upload.single('file'), async (req, res) => {
   }
 });
 
-// ... (keep top part, we will restructure app listen)
+// ... (keep rest of imports)
+const distPath = path.join(process.cwd(), '../dist');
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/ws') return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
